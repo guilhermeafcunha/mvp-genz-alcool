@@ -97,6 +97,26 @@ As regras ficam em módulos Python (`scripts/`) chamados pelos notebooks, para p
 
 **Execução na nuvem (21/10/2026).** Os notebooks 01 a 06 foram executados no Databricks Free Edition, com computação serverless. As capturas estão em [`evidencias/databricks/`](evidencias/databricks/), numeradas na ordem da execução, e são citadas abaixo no ponto que cada uma comprova. O workspace com os seis notebooks e o cabeçalho do notebook 01 aparecem em [01](evidencias/databricks/01_nb01_cabecalho.png); a célula que localiza a pasta `scripts/` ao lado dos notebooks, em [02](evidencias/databricks/02_nb01_localiza_scripts.png).
 
+### 2.1 Estrutura de custos (viabilidade financeira)
+
+O roteiro pede que o MVP mostre uso de recursos compatível com o problema e um custo de operação estimado. Os componentes do custo são:
+
+| Componente | Neste MVP | Numa operação contínua paga |
+|---|---|---|
+| Dados | Gratuitos: base pública do Ministério da Saúde (licença CC BY-ND 3.0), uma edição nova por ano | Continua gratuito |
+| Armazenamento | ZIP de 87 MB no Volume, bronze Delta de cerca de 75 MB (soma dos lotes gravados, capturas 04 e 05), silver, gold, qualidade e resultados bem menores: menos de 0,5 GB no total | Menos de 0,5 GB em armazenamento de objetos: centavos de dólar por mês |
+| Computação | Databricks Free Edition, serverless: **custo zero**, dentro das cotas do plano | Uma execução completa (notebooks 01 a 06) por edição do Vigitel, mais reprocessamentos |
+| Pessoas | O maior custo real: desenho, tratamento e análise feitos pelo autor | Manutenção pequena: conferir a edição nova e revisar as regras de qualidade |
+
+**Estimativa do custo de computação numa conta paga.** A execução registrada nas capturas foi de 18h30 a cerca de 19h05 de 21/10/2026, incluindo o tempo de abrir e rodar cada notebook à mão; a parte mais pesada é a carga da bronze, cerca de 5 minutos (capturas 04 e 05). Arredondando para cima, considero **0,5 hora de computação por execução completa**. O consumo de um serverless pequeno fica na ordem de 2 a 8 DBU por hora (premissa do autor, a confirmar no painel de uso de uma conta paga), e o preço de tabela do serverless, em referências de mercado para o plano Premium na AWS, fica entre cerca de US$ 0,35 (jobs) e US$ 0,75 (notebooks interativos) por DBU (OWOX, 2026). Com isso:
+
+| | Por execução | Por ano (1 edição + 11 reprocessamentos = 12 execuções) |
+|---|---|---|
+| Cenário baixo (2 DBU/h a US$ 0,35, como job agendado) | US$ 0,35 | cerca de US$ 4 |
+| Cenário alto (8 DBU/h a US$ 0,75, rodando à mão) | US$ 3,00 | cerca de US$ 36 |
+
+Os números são estimativas de ordem de grandeza, não orçamento: os preços variam por nuvem, região e plano, e devem ser conferidos na página oficial de preços do Databricks antes de qualquer contratação. Mesmo no cenário alto, o custo anual de operação fica em dezenas de dólares, desprezível perto da decisão que o pipeline apoia (posicionamento de portfólio de uma empresa de bebidas) e do custo de erro descrito na seção 1.1. O uso de recursos é compatível com o problema: uma base de 577 MB, atualizada uma vez por ano, não exige cluster dedicado nem processamento contínuo; o próprio Free Edition bastou, com a única adaptação da gravação em lotes (seção 11.4).
+
 ## 3. Dados: origem, licença e coleta
 
 | Item | Valor |
@@ -373,7 +393,7 @@ O objetivo foi reescrito uma vez (16/10/2026), depois da análise exploratória,
 
 ### 11.5 Extensões para uma solução de uso contínuo
 
-- **Atualização automática.** Agendar os notebooks 01 a 06 como um *Job* do Databricks a cada nova edição do Vigitel, com a conferência do SHA-256 decidindo se há arquivo novo e as regras de qualidade bloqueando a carga quando falharem.
+- **Atualização automática.** Agendar os notebooks 01 a 06 como um *Job* do Databricks (o modo mais barato de computação; custo estimado na seção 2.1) a cada nova edição do Vigitel, com a conferência do SHA-256 decidindo se há arquivo novo e as regras de qualidade bloqueando a carga quando falharem.
 - **Painel para o decisor.** Publicar os resultados `res_*` num painel do Databricks (*AI/BI Dashboard*), com filtros de geração, sexo, escolaridade e capital, e a margem de erro sempre visível.
 - **Fechar as lacunas de cobertura.** Juntar a PNS (IBGE), que cobre interior e área rural e mede renda, e a PeNSE, que acompanha os adolescentes que ainda vão chegar aos 18 anos (geração Alpha).
 - **Medir o mercado, não só a prevalência.** Cruzar com dados de volume e de vendas (POF do IBGE, dados de varejo ou da própria empresa), inclusive de bebidas sem álcool e de baixo teor.
@@ -391,6 +411,8 @@ BRASIL. Ministério da Saúde. **Vigitel Brasil 2006-2024**: base de dados harmo
 BRUCE, P.; BRUCE, A. **Estatística prática para cientistas de dados**. Rio de Janeiro: Alta Books, 2019.
 
 DIMOCK, M. **Defining generations**: where Millennials end and Generation Z begins. Washington, DC: Pew Research Center, 2019.
+
+OWOX. **Databricks pricing**: DBU rates, tiers and costs. 2026. Disponível em: <https://www.owox.com/blog/articles/databricks-pricing.md>. Acesso em: 21 out. 2026.
 
 PROVOST, F.; FAWCETT, T. **Data science for business**. Sebastopol: O'Reilly Media, 2013.
 

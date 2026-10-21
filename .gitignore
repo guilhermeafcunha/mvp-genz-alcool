@@ -1,0 +1,12 @@
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+.DS_Store
+# dados brutos (licenca CC BY-ND e 577 MB): baixados do site oficial pelo notebook 01 (SHA-256 conferido)
+dados/raw/*
+!dados/raw/.gitkeep
+notebooks/aed/saidas_aed_v1/*.zip
+tests/_*.duckdb*
+# copias locais de trabalho: o codigo publicado esta em notebooks/ e scripts/
+_backup_antes_D14/
+Importar Databricks/

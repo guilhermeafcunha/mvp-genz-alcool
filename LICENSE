@@ -1,0 +1,44 @@
+MIT License
+
+Copyright (c) 2026 Guilherme Augusto Fontes Cunha
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+-------------------------------------------------------------------------------
+
+Licença dos dados utilizados
+
+A licença MIT acima vale só para o código deste repositório (notebooks,
+scripts e testes). Ela não se aplica aos dados nem aos documentos da pasta
+docs_fonte/.
+
+Fonte: Ministério da Saúde, SVSA/DAENT. Vigitel Brasil 2006-2024, base de
+dados harmonizada publicada em 24/08/2026.
+Endereço: https://svs.aids.gov.br/daent/cgdnt/vigitel/
+Licença: Creative Commons Atribuição-SemDerivações 3.0 (CC BY-ND 3.0),
+conforme o portal do Ministério.
+
+- Os microdados brutos não são versionados neste repositório. O notebook
+  01_coleta_bronze baixa o arquivo do site oficial e confere o SHA-256.
+- Os documentos em docs_fonte/ (dicionário, orientações, nota metodológica e
+  relatórios) são reproduzidos sem alteração, com atribuição ao Ministério da
+  Saúde.
+- Tabelas e figuras de resultados são agregados calculados pelo autor a partir
+  dos microdados, com a fonte citada. Os microdados são anonimizados pela fonte
+  e a análise publica apenas resultados agregados (Lei nº 13.709/2018, LGPD).

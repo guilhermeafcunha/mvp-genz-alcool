@@ -1,0 +1,336 @@
+
+===== 01_coleta_bronze.py =====
+Arquivo: C:\Users\Guilherme\OneDrive\Área de Trabalho\PSP8\PIPELINE MVP - GEN Z AND ALCOHOL\dados\raw\vigitel-2006-2024-peso-rake-csv.zip
+Tamanho: 87,121,523 bytes
+SHA-256: 40139996d11deb2f52730c90f14e2df4bf5e53aba3cf1848fce391c93ff77993
+Bronze gravada: 833,217 linhas
+                               arquivo                                                                                                                    caminho_volume                             csv_interno data_coleta     bytes                                                            sha256  linhas  colunas_csv                                                                 formato                                                                                     fonte                                           url                licenca
+0  vigitel-2006-2024-peso-rake-csv.zip  C:\Users\Guilherme\OneDrive\Área de Trabalho\PSP8\PIPELINE MVP - GEN Z AND ALCOHOL\dados\raw\vigitel-2006-2024-peso-rake-csv.zip  vigitel-2006-2024-peso-rake_slabel.csv  2026-10-18  87121523  40139996d11deb2f52730c90f14e2df4bf5e53aba3cf1848fce391c93ff77993  833217          486  ZIP com CSV, virgula, cabecalho, codificacao mista (lido como latin-1)  Ministerio da Saude, SVSA/DAENT, Vigitel Brasil 2006-2024 (base harmonizada, 24/08/2026)  https://svs.aids.gov.br/daent/cgdnt/vigitel/  CC BY-ND 3.0 (portal)
+     ano  entrevistas
+0   2006        54369
+1   2007        54251
+2   2008        54353
+3   2009        54367
+4   2010        54339
+5   2011        54144
+6   2012        45448
+7   2013        52929
+8   2014        40853
+9   2015        54174
+10  2016        53210
+11  2017        53034
+12  2018        52395
+13  2019        52443
+14  2020        27077
+15  2021        27093
+16  2023        21690
+17  2024        27048
+OK: bronze persistida no Delta com 833,217 linhas, as mesmas do CSV.
+
+===== 02_transformacao_silver.py =====
+Bronze (colunas da análise): 833,217 linhas
+Silver: 615,877 linhas, 28 colunas | testes: OK
+       geracao faixa_etaria  entrevistas  primeira_edicao  ultima_edicao
+0  millennials      18 a 24        23805             2010           2016
+1  zillennials      18 a 24        26745             2011           2021
+2    geracao_z      18 a 24        10485             2017           2024
+     ano modo_coleta  entrevistas  soma_peso_norm
+0   2010        fixo        54339        1.000000
+1   2011        fixo        54144        1.000000
+2   2012        fixo        45448        1.000000
+3   2013        fixo        52929        1.000000
+4   2014        fixo        40853        1.000000
+5   2015        fixo        54174        1.000000
+6   2016        fixo        53210        1.000000
+7   2017        fixo        53034        1.000000
+8   2018        fixo        52395        1.000000
+9   2019        fixo        52443        1.000000
+10  2020        fixo        27077        1.000000
+11  2021        fixo        27093        1.000000
+12  2023     celular        10832        0.391182
+13  2023        fixo        10858        0.608818
+14  2024     celular        24448        0.764400
+15  2024        fixo         2600        0.235600
+
+===== 03_carga_gold_estrela.py =====
+Integridade referencial OK: {'fato_entrevista': 615877, 'dim_edicao': 14, 'dim_capital': 27, 'dim_geracao': 4, 'dim_escolaridade': 3, 'dim_faixa_etaria': 6, 'dim_sexo': 2}
+                          tableName
+0                 bronze_coleta_log
+1                    bronze_vigitel
+2                       dim_capital
+3                        dim_edicao
+4                  dim_escolaridade
+5                  dim_faixa_etaria
+6                       dim_geracao
+7                          dim_sexo
+8                   fato_entrevista
+9                      qa_checagens
+10                     qa_cobertura
+11              qa_perfil_atributos
+12                   res_correlatos
+13          res_correlatos_destaque
+14             res_modo_coleta_2023
+15              res_p1_decomposicao
+16                res_p1_diferencas
+17                   res_p1_geracao
+18                 res_p1_por_idade
+19                res_p2_diferencas
+20              res_p2_escolaridade
+21  res_p3_diferenca_das_diferencas
+22            res_p3_envelhecimento
+23                   res_p3_periodo
+24                res_p4_diferencas
+25                      res_p4_sexo
+26                  res_p5_capitais
+27                   res_p5_regioes
+28               res_sensibilidades
+29           res_serie_faixa_etaria
+   linhas_fato  linhas_silver
+0       615877         615877
+OK: modelo estrela carregado e consistente.
+       geracao       sexo  entrevistas  consumo_abusivo_pct
+0  millennials   feminino        12643                 15.4
+1  millennials  masculino        11162                 30.3
+2  zillennials   feminino        13552                 17.0
+3  zillennials  masculino        13193                 25.5
+4    geracao_z   feminino         5321                 19.3
+5    geracao_z  masculino         5164                 22.2
+
+===== 04_qualidade_dados.py =====
+Silver: 615,877 linhas | Bronze: 833,217 linhas (615,877 de 2010 em diante)
+        dimensao                                                                              regra  ocorrencias                                                 tratamento     situacao
+0     completude                                      Bronze tem o mesmo número de registros do CSV            0      Leitura por lotes, com conferência das linhas físicas           ok
+1     completude                                  Silver tem todas as entrevistas de 2010 em diante            0                                        D5: filtro pelo ano           ok
+2     completude  Colunas obrigatórias sem nulos (capital, idade, sexo, escolaridade, alcabu, peso)            0                                                     Nenhum           ok
+3     completude                                                             Edição de 2022 ausente            1                            D1: lacuna mantida, sem imputar  informativa
+4      unicidade                                                                entrevista_id único            0                                      D10: chave substituta           ok
+5      unicidade                                             chave oficial repetida (só referência)        86001                          D10: não usada como identificador  informativa
+6   consistencia                                                  Faixa etária coerente com a idade            0                                                     Nenhum           ok
+7   consistencia                                        Escolaridade coerente com os anos de estudo            0                                                     Nenhum           ok
+8   consistencia          Só responde às doses quem bebe ao menos 1x por mês (pulo de questionário)            0               Vazio tratado como pulo, e não como faltante           ok
+9   consistencia                               alcabu = 1 apenas para quem bebe ao menos 1x por mês            0                                                     Nenhum           ok
+10  conformidade                                                    Códigos de capital entre 1 e 27            0                            D12: região derivada da capital           ok
+11  conformidade                                             Peso normalizado soma 1 em cada edição            0                                                         D4           ok
+12      acuracia                                                          Idade entre 18 e 110 anos            2       Mantidas: fora das faixas da análise (18-24 e 35-44)  informativa
+13      acuracia                           Escolaridade estimada pelo Ministério (q8a = 777 ou 888)         7477                 D8: mantida; sensibilidade sem esses casos  informativa
+14    atualidade                                                                Edição mais recente         2024              Vigitel 2024 (base harmonizada de 24/08/2026)  informativa
+15    atualidade                                                Entrevistas por celular (2023-2024)        35280  D2 e D13: sensibilidades geração Z só por fixo e sem 2024  informativa
+                 atributo     tipo   nulos  pct_nulos  distintos        minimo        maximo                                                                                        exemplos
+0           entrevista_id      str       0       0.00     615877           NaN           NaN                                              2010-217341; 2010-217342; 2010-217343; 2010-217344
+1            linha_origem    int64       0       0.00     615877  2.173410e+05  8.332170e+05                                                                  217341; 217342; 217343; 217344
+2           chave_oficial      str  233908      37.98     295968           NaN           NaN                                              00210121030; 00210141029; 00210211030; 00210452058
+3                     ano    int64       0       0.00         14  2.010000e+03  2.024000e+03                                                                          2010; 2011; 2012; 2013
+4         edicao_pandemia     bool       0       0.00          2           NaN           NaN                                                                                     False; True
+5      edicao_filtro_novo     bool       0       0.00          2           NaN           NaN                                                                                     False; True
+6              cidade_cod    int64       0       0.00         27  1.000000e+00  2.700000e+01                                                                                   1; 10; 11; 12
+7                 capital      str       0       0.00         27           NaN           NaN                                                       Aracaju; Belo Horizonte; Belém; Boa Vista
+8                      uf      str       0       0.00         27           NaN           NaN                                                                                  AC; AL; AM; AP
+9                  regiao      str       0       0.00          5           NaN           NaN                                                          Centro-Oeste; Nordeste; Norte; Sudeste
+10            modo_coleta      str       0       0.00          2           NaN           NaN                                                                                   celular; fixo
+11                  idade    int64       0       0.00         94  1.800000e+01  1.200000e+02                                                                              100; 101; 102; 103
+12       faixa_etaria_cod    int64       0       0.00          6  1.000000e+00  6.000000e+00                                                                                      1; 2; 3; 4
+13           faixa_etaria      str       0       0.00          6           NaN           NaN                                                              18 a 24; 25 a 34; 35 a 44; 45 a 54
+14                   sexo      str       0       0.00          2           NaN           NaN                                                                             feminino; masculino
+15         ano_nascimento    int64       0       0.00        102  1.890000e+03  2.006000e+03                                                                          1890; 1900; 1905; 1908
+16                geracao      str       0       0.00          4           NaN           NaN                                                      geracao_z; millennials; outra; zillennials
+17            anos_estudo  float64       0       0.00        603  0.000000e+00  2.200000e+01                                                                       0.0; 1.0; 10.0; 10.027933
+18       escolaridade_cod    int64       0       0.00          3  1.000000e+00  3.000000e+00                                                                                         1; 2; 3
+19           escolaridade      str       0       0.00          3           NaN           NaN                                                         0 a 8 anos; 12 anos e mais; 9 a 11 anos
+20  escolaridade_estimada     bool       0       0.00          2           NaN           NaN                                                                                     False; True
+21                 alcabu    int64       0       0.00          2  0.000000e+00  1.000000e+00                                                                                            0; 1
+22         frequencia_cod    Int64  396289      64.35          6  1.000000e+00  6.000000e+00                                                                                      1; 2; 3; 4
+23            bebe_mensal    int64       0       0.00          2  0.000000e+00  1.000000e+00                                                                                            0; 1
+24      costuma_beber_q35    Int64   27048       4.39          2  0.000000e+00  1.000000e+00                                                                                            0; 1
+25        respondeu_doses    int64       0       0.00          2  0.000000e+00  1.000000e+00                                                                                            0; 1
+26                   peso  float64       0       0.00      76521  3.082660e+04  3.685761e+07                                              1000003.125; 1000045.8125; 1000108.0; 1000120.6875
+27              peso_norm  float64       0       0.00      76582  4.661942e-07  1.268213e-03  0.00010001593275904761; 0.00010003298357712912; 0.00010003936456579755; 0.00010004499590684407
+geracao   ano  geracao_z  millennials  zillennials  celular_%
+0        2010          0         7364            0        0.0
+1        2011          0         5847         1124        0.0
+2        2012          0         3756         1597        0.0
+3        2013          0         3173         2661        0.0
+4        2014          0         1748         2568        0.0
+5        2015          0         1258         3792        0.0
+6        2016          0          659         4504        0.0
+7        2017        710            0         3800        0.0
+8        2018       1331            0         3202        0.0
+9        2019       1796            0         2235        0.0
+10       2020       1263            0          812        0.0
+11       2021       1267            0          450        0.0
+12       2023       1824            0            0       49.9
+13       2024       2294            0            0       90.4
+Tabelas de qualidade gravadas.
+
+===== 05_analise_hipoteses.py =====
+615,877 entrevistas de 2010 em diante | jovens das três gerações: 61,035
+      modo      n  n_efetivo  prev   ep  ic_inf  ic_sup            grupo
+0  celular  10832     2802.9  27.0  0.8    25.4    28.7  todas as idades
+1     fixo  10858     2595.5  15.5  0.7    14.2    16.9  todas as idades
+0  celular   1232      318.1  25.7  2.5    20.9    30.5          18 a 24
+1     fixo    592      195.0  19.5  2.8    14.0    25.1          18 a 24
+geracao  geracao_z  millennials  zillennials
+idade                                       
+18            16.3         13.4         13.7
+19            19.2         17.5         16.2
+20            21.3         19.7         20.1
+21            27.6         24.6         24.7
+22            20.2         22.7         23.8
+23            22.2         23.8         28.1
+24            29.0         26.4         29.0
+geracao  geracao_z  millennials  zillennials
+idade                                       
+18            28.8          4.3         19.2
+19            18.0          7.6         15.1
+20            17.0         12.5         16.5
+21            12.4         13.7         13.5
+22            10.1         18.5         13.8
+23             6.7         21.2         12.6
+24             7.0         22.2          9.3
+       geracao      n  prev  ic_inf  ic_sup  prev_bruta  prev_padr_escolaridade
+0  millennials  23805  21.1    20.1    22.2        22.8                    21.2
+1  zillennials  26745  22.2    21.2    23.2        21.3                    22.6
+2    geracao_z  10485  22.3    20.4    24.1        20.8                    22.7
+                  comparacao  diferenca_pp  ic_inf  ic_sup  significativa
+0  zillennials - millennials           1.1    -0.4     2.5          False
+1    geracao_z - millennials           1.1    -1.1     3.3          False
+2    geracao_z - zillennials           0.0    -2.1     2.2          False
+       geracao       sexo      n  abusivo  ic_inf  ic_sup  bebe_mensal  abusivo_entre_quem_bebe  costuma_beber_q35_ate_2023
+0    geracao_z   feminino   5321     20.5    17.9    23.0         35.1                     57.9                        43.6
+1    geracao_z  masculino   5164     24.0    21.2    26.8         41.3                     58.1                        52.6
+2  millennials   feminino  12643     14.1    12.8    15.3         25.2                     55.6                        30.9
+3  millennials  masculino  11162     28.1    26.4    29.8         43.2                     64.6                        48.1
+4  zillennials   feminino  13552     17.8    16.6    19.1         29.6                     59.3                        36.0
+5  zillennials  masculino  13193     26.7    25.2    28.2         41.4                     64.0                        47.4
+     escolaridade                 comparacao  diferenca_pp  ic_inf  ic_sup  significativa  diferenca_sem_estimada_pp
+0      0 a 8 anos  zillennials - millennials           5.4    -0.2    11.0          False                        5.4
+1      0 a 8 anos    geracao_z - millennials           0.6    -7.2     8.4          False                        0.6
+2  12 anos e mais  zillennials - millennials           0.3    -2.3     2.8          False                        0.3
+3  12 anos e mais    geracao_z - millennials           1.2    -2.5     5.0          False                        1.2
+4     9 a 11 anos  zillennials - millennials           1.3    -0.6     3.3          False                        1.3
+5     9 a 11 anos    geracao_z - millennials           2.0    -0.9     4.8          False                        1.9
+       geracao    escolaridade      n  abusivo  ic_inf  ic_sup  bebe_mensal  abusivo_entre_quem_bebe  costuma_beber_q35_ate_2023
+0    geracao_z      0 a 8 anos    562     23.6    16.6    30.5         40.6                     58.8                        53.9
+1    geracao_z  12 anos e mais   3026     24.5    21.3    27.7         41.6                     58.8                        51.8
+2    geracao_z     9 a 11 anos   6897     21.2    18.7    23.7         35.8                     59.0                        44.9
+3  millennials      0 a 8 anos   1777     23.0    19.4    26.6         37.3                     61.6                        42.8
+4  millennials  12 anos e mais  10617     23.3    21.4    25.3         36.6                     63.2                        42.0
+5  millennials     9 a 11 anos  11411     19.2    17.9    20.6         32.2                     59.5                        37.2
+6  zillennials      0 a 8 anos   1590     28.4    24.1    32.7         41.2                     68.4                        47.0
+7  zillennials  12 anos e mais  10988     23.6    22.0    25.2         37.2                     63.7                        44.0
+8  zillennials     9 a 11 anos  14167     20.6    19.2    21.9         33.1                     61.2                        38.9
+                              grupo  periodo_millennials  periodo_geracao_z  diferenca_pp  ic_inf  ic_sup
+0                    jovens 18 a 24                 21.1               22.3           1.1    -1.1     3.3
+1  adultos 35 a 44 (mesmas edições)                 19.2               23.0           3.8     2.7     4.8
+   diferenca_das_diferencas_pp  ic_inf  ic_sup  significativa
+0                         -2.7    -5.1    -0.3           True
+geracao                geracao_z  millennials  zillennials
+sexo      idade_grupo                                     
+feminino  18-24             20.5         14.1         17.8
+          25-29              NaN         18.9         22.4
+          30-34              NaN         19.9          NaN
+          35-39              NaN         22.2          NaN
+masculino 18-24             24.0         28.1         26.7
+          25-29              NaN         34.8         33.4
+          30-34              NaN         36.1          NaN
+          35-39              NaN         33.0          NaN
+        sexo                 comparacao  diferenca_pp  ic_inf  ic_sup  significativa
+0   feminino  zillennials - millennials           3.8     2.0     5.6           True
+1   feminino    geracao_z - millennials           6.4     3.6     9.2           True
+2   feminino    geracao_z - zillennials           2.6    -0.2     5.4          False
+3  masculino  zillennials - millennials          -1.4    -3.7     0.9          False
+4  masculino    geracao_z - millennials          -4.0    -7.3    -0.8           True
+5  masculino    geracao_z - zillennials          -2.6    -5.8     0.5          False
+         regiao               comparacao  diferenca_pp  ic_inf  ic_sup  significativa
+0  Centro-Oeste  geracao_z - millennials           2.1    -1.8     6.1          False
+1      Nordeste  geracao_z - millennials          -0.4    -3.0     2.1          False
+2         Norte  geracao_z - millennials          -0.5    -3.2     2.2          False
+3       Sudeste  geracao_z - millennials           2.1    -2.5     6.6          False
+4           Sul  geracao_z - millennials           4.5    -0.5     9.6          False
+             capital        regiao  diferenca_pp  ic_inf  ic_sup  significativa  regiao_diferenca_pp                                         leitura
+0            Aracaju      Nordeste          -6.1   -12.1    -0.1           True                 -0.4  capital com diferença própria (fora da margem)
+1     Rio de Janeiro       Sudeste          -5.5   -12.0     1.1          False                  2.1                  capital e região inconclusivas
+2           Teresina      Nordeste          -5.4   -11.4     0.6          False                 -0.4                  capital e região inconclusivas
+3           São Luís      Nordeste          -4.2   -10.0     1.7          False                 -0.4                  capital e região inconclusivas
+4             Maceió      Nordeste          -4.0   -10.2     2.2          False                 -0.4                  capital e região inconclusivas
+5             Palmas         Norte          -3.5    -9.0     2.0          False                 -0.5                  capital e região inconclusivas
+6             Recife      Nordeste          -2.7   -10.0     4.6          False                 -0.4                  capital e região inconclusivas
+7              Belém         Norte          -2.4    -7.7     2.9          False                 -0.5                  capital e região inconclusivas
+8            Goiânia  Centro-Oeste          -2.2    -8.6     4.1          False                  2.1                  capital e região inconclusivas
+9          Fortaleza      Nordeste          -1.0    -7.6     5.7          False                 -0.4                  capital e região inconclusivas
+10            Manaus         Norte          -0.6    -6.1     4.9          False                 -0.5                  capital e região inconclusivas
+11       Porto Velho         Norte          -0.6    -6.2     5.1          False                 -0.5                  capital e região inconclusivas
+12       João Pessoa      Nordeste          -0.4    -6.3     5.6          False                 -0.4                  capital e região inconclusivas
+13            Cuiabá  Centro-Oeste           0.3    -6.4     7.0          False                  2.1                  capital e região inconclusivas
+14      Campo Grande  Centro-Oeste           0.4    -6.6     7.4          False                  2.1                  capital e região inconclusivas
+15             Natal      Nordeste           0.4    -6.7     7.6          False                 -0.4                  capital e região inconclusivas
+16        Rio Branco         Norte           0.4    -5.1     6.0          False                 -0.5                  capital e região inconclusivas
+17            Macapá         Norte           1.0    -4.3     6.2          False                 -0.5                  capital e região inconclusivas
+18         Boa Vista         Norte           2.8    -2.4     8.0          False                 -0.5                  capital e região inconclusivas
+19     Florianópolis           Sul           3.1    -4.9    11.1          False                  4.5                  capital e região inconclusivas
+20          Curitiba           Sul           3.5    -4.3    11.4          False                  4.5                  capital e região inconclusivas
+21  Distrito Federal  Centro-Oeste           4.1    -2.7    10.8          False                  2.1                  capital e região inconclusivas
+22         São Paulo       Sudeste           4.3    -2.5    11.1          False                  2.1                  capital e região inconclusivas
+23    Belo Horizonte       Sudeste           4.4    -3.4    12.2          False                  2.1                  capital e região inconclusivas
+24          Salvador      Nordeste           5.1    -2.2    12.5          False                 -0.4                  capital e região inconclusivas
+25           Vitória       Sudeste           5.4    -1.4    12.1          False                  2.1                  capital e região inconclusivas
+26      Porto Alegre           Sul           5.6    -2.7    13.8          False                  4.5                  capital e região inconclusivas
+recorte                                        homens  mulheres  total
+cenario                                                               
+base                                             -4.0       6.4    1.1
+base sem padronizar pela idade (antes da D14)    -8.1       3.9   -2.1
+geração Z só por telefone fixo                   -2.8       2.7    0.2
+sem 2020 e 2021 (pandemia)                       -4.0       7.1    1.5
+sem 2024 (filtro novo e celular)                 -2.4       5.1    1.3
+sem escolaridade estimada                        -4.1       6.4    1.1
+só 18 a 21 anos                                  -2.8       8.1    2.3
+recorte                                        homens  mulheres  total
+cenario                                                               
+base                                             True      True  False
+base sem padronizar pela idade (antes da D14)    True      True   True
+geração Z só por telefone fixo                  False     False  False
+sem 2020 e 2021 (pandemia)                       True      True  False
+sem 2024 (filtro novo e celular)                False      True  False
+sem escolaridade estimada                        True      True  False
+só 18 a 21 anos                                 False      True  False
+                                                                                criterio                                                                                resultado  atende_hipotese                                                                 resultado_sem_padronizar  atendia_sem_padronizar
+0                   (a) a prevalência aos 18-24 diminui da geração Z para os millennials                                                               +1.1 p.p. (IC -1.1 a +3.3)            False                                                               -2.1 p.p. (IC -3.9 a -0.2)                    True
+1                    (b) a queda ocorre nos dois sexos e nas três faixas de escolaridade  feminino +6.4*; masculino -4.0*; 0 a 8 anos +0.6; 12 anos e mais +1.2; 9 a 11 anos +2.0            False  feminino +3.9*; masculino -8.1*; 0 a 8 anos -2.8; 12 anos e mais -1.8; 9 a 11 anos -1.1                   False
+2  (c) a mudança dos jovens é mais favorável que a dos adultos de 35-44 no mesmo período                                     diferença das diferenças: -2.7 p.p. (IC -5.1 a -0.3)             True                                                                                                             <NA>
+17 tabelas de resultado gravadas; figuras em C:\Users\Guilherme\OneDrive\Área de Trabalho\PSP8\PIPELINE MVP - GEN Z AND ALCOHOL\resultados\figuras
+
+===== 06_correlatos.py =====
+615,877 entrevistas; jovens de 18 a 24: 61,035
+                                variavel expectativa     coluna_origem    edicoes      n  pct_expostos  prev_expostos  prev_nao_expostos  dif_ajustada  ic_inf  ic_sup  significativa  significativa_bonferroni  dif_adultos
+0                           fuma cigarro    provável           fumante  2010-2024  61035           8.0           56.5               18.6          37.8    34.6    41.0           True                      True         21.3
+1                 usa cigarro eletrônico    provável        eletronico  2019-2024  11941           7.5           54.3               20.5          34.0    27.3    40.8           True                      True         35.0
+2               diagnóstico de depressão    provável         depressao  2020-2024   7910          10.3           30.2               21.4           8.3     2.4    14.2           True                     False         -0.4
+3                refrigerante 5x+/semana     incerta          refritl5  2010-2024  61035          28.1           27.4               19.3           8.3     6.6    10.0           True                      True          6.9
+4                               trabalha    provável               q47  2010-2024  61035          61.7           24.7               16.5           7.4     6.1     8.7           True                      True         10.3
+5                  tela no lazer 3h+/dia    provável  tempo_tela_total  2016-2024  26147          81.4           24.2               17.6           6.6     4.3     9.0           True                      True          9.6
+6                     12+ anos de estudo    provável              fesc  2010-2024  61035          32.5           24.7               20.1           5.2     3.8     6.6           True                      True          5.8
+7                saúde autoavaliada ruim     incerta            saruim  2010-2024  61035           3.2           23.9               21.5           4.5     0.8     8.2           True                     False         -2.7
+8                        excesso de peso  improvável         excpeso_i  2010-2024  61035          31.3           25.0               20.0           4.1     2.7     5.5           True                      True          1.6
+9                              obesidade  improvável          obesid_i  2010-2024  61035           8.7           24.8               21.3           3.4     1.1     5.8           True                     False          0.9
+10                    tem plano de saúde    provável               q88  2010-2024  60873          47.9           23.3               20.1           3.3     1.9     4.6           True                      True          1.8
+11                           solteiro(a)    provável             civil  2010-2024  60779          89.4           22.1               17.4           3.1     0.9     5.3           True                     False          7.6
+12                            TV 3h+/dia     incerta            tv_d_3  2010-2024  61035          22.3           22.9               21.2           2.6     0.9     4.4           True                     False          2.8
+13                           hipertensão  improvável              hart  2010-2024  61035           4.1           23.7               21.5           1.9    -1.4     5.1          False                     False         -5.5
+14                 estuda (curso/escola)    provável               q52  2010-2024  60931          49.5           21.0               22.2          -1.0    -2.3     0.4          False                     False          2.2
+15                              diabetes  improvável              diab  2010-2024  61035           0.9           19.9               21.6          -1.0    -8.3     6.2          False                     False         -9.0
+16                   fisicamente inativo     incerta           inativo  2010-2023  58741          13.1           18.1               22.0          -1.7    -3.7     0.4          False                     False         -5.3
+17         frutas e hortaliças regulares  improvável            flvreg  2010-2024  61035          26.6           20.1               22.1          -1.7    -3.1    -0.3           True                     False         -3.4
+18             preta ou parda (x branca)     incerta               q69  2010-2024  58281          58.0           20.7               22.8          -2.4    -3.8    -1.0           True                      True          1.2
+19                     dorme menos de 7h    provável           r701_hh       2024   2290          39.7           20.8               23.9          -3.0    -9.7     3.7          False                     False          0.9
+20  dificuldade p/ dormir (quase sempre)    provável              r703       2024   2294          25.0           19.8               23.6          -3.8   -11.5     4.0          False                     False          2.0
+                   variavel  exposto      n  prev
+0    usa cigarro eletrônico        0  11262  20.5
+1    usa cigarro eletrônico        1    679  54.3
+2  diagnóstico de depressão        0   7022  21.4
+3  diagnóstico de depressão        1    888  30.2
+4     tela no lazer 3h+/dia        0   5082  17.6
+5     tela no lazer 3h+/dia        1  21065  24.2
+6                  trabalha        0  24991  16.5
+7                  trabalha        1  36044  24.7
+Tabelas de correlatos gravadas.
+
+TODOS OS NOTEBOOKS EXECUTARAM SEM ERRO

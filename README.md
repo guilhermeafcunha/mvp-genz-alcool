@@ -5,7 +5,7 @@ Autor: Guilherme Augusto Fontes Cunha.
 
 **Versão do objetivo:** 2 (16/10/2026). A formulação original, que comparava o ano de 2010 com o ano mais recente, está no [Anexo A](#anexo-a-formulação-anterior-do-objetivo-v1). A mudança veio da análise exploratória (*Relatório de Análise Exploratória de Dados v2*): a comparação entre anos misturava comportamento com mudanças de método da pesquisa, e a pergunta de negócio é sobre gerações. O problema, o decisor e a fonte continuam os mesmos.
 
-> **Situação em 21/10/2026: entrega parcial.** O pipeline completo (coleta, bronze, silver, gold em esquema estrela, qualidade e análise) está pronto e foi validado por execução local, com as mesmas regras e funções que rodam no Databricks. As perguntas P1 a P5 já têm resposta (seção 9). Faltam a execução no Databricks Free Edition com as capturas de tela, a discussão geral e a autoavaliação. O que já foi feito, dia a dia, e o que falta estão na [seção 10](#10-situação-do-projeto-e-próximos-passos).
+> **Situação em 21/10/2026: entrega parcial.** O pipeline completo (coleta, bronze, silver, gold em esquema estrela, qualidade e análise) está pronto e foi validado por execução local, com as mesmas regras e funções que rodam no Databricks. As perguntas P1 a P5 já têm resposta e discussão (seção 9), e a autoavaliação está na seção 11. O pipeline foi executado no Databricks Free Edition em 21/10/2026, com os mesmos resultados da execução local, e as capturas estão citadas ao longo do texto. O que já foi feito, dia a dia, e o que falta estão na [seção 10](#10-situação-do-projeto-e-próximos-passos).
 
 ## 1. Objetivo
 
@@ -95,6 +95,8 @@ site do Ministério ──> Volume raw (ZIP, SHA-256) ──> bronze_vigitel (c�
 
 As regras ficam em módulos Python (`scripts/`) chamados pelos notebooks, para poderem ser testadas fora do cluster (`tests/rodar_local.py`). A gravação no Delta é feita em lotes, porque a base (833 mil linhas) passa do limite de uma única mensagem do Databricks Free Edition.
 
+**Execução na nuvem (21/10/2026).** Os notebooks 01 a 06 foram executados no Databricks Free Edition, com computação serverless. As capturas estão em [`evidencias/databricks/`](evidencias/databricks/), numeradas na ordem da execução, e são citadas abaixo no ponto que cada uma comprova. O workspace com os seis notebooks e o cabeçalho do notebook 01 aparecem em [01](evidencias/databricks/01_nb01_cabecalho.png); a célula que localiza a pasta `scripts/` ao lado dos notebooks, em [02](evidencias/databricks/02_nb01_localiza_scripts.png).
+
 ## 3. Dados: origem, licença e coleta
 
 | Item | Valor |
@@ -104,8 +106,14 @@ As regras ficam em módulos Python (`scripts/`) chamados pelos notebooks, para p
 | Arquivo | `vigitel-2006-2024-peso-rake-csv.zip`, 87.121.523 bytes, SHA-256 `40139996d11deb2f52730c90f14e2df4bf5e53aba3cf1848fce391c93ff77993` |
 | Conteúdo | um CSV de 577 MB: 833.217 entrevistas, 486 colunas, separador vírgula, codificação mista (lido como latin-1) |
 | Licença | Creative Commons Atribuição-SemDerivações 3.0 (portal do Ministério). O MVP não redistribui o arquivo: o notebook 01 baixa do site oficial. Licença do código e registro da licença dos dados em [`LICENSE`](LICENSE) |
-| Coleta | 16/10/2026; automática no notebook 01 (ou envio manual do ZIP ao Volume) |
+| Coleta | 16/10/2026 (cópia local, usada na exploração); 21/10/2026 no Databricks, registrada na tabela `bronze_coleta_log`. Automática no notebook 01 (ou envio manual do ZIP ao Volume) |
 | Documentação | dicionário, orientações, nota metodológica e relatórios em `docs_fonte/` |
+
+**Evidência da coleta e da persistência na bronze.** O notebook 01 gravou o ZIP no Volume `/Volumes/workspace/genz_alcool/raw/` e conferiu tamanho e SHA-256 contra o arquivo oficial:
+
+![Notebook 01: ZIP no Volume, com tamanho e SHA-256 conferidos](evidencias/databricks/03_nb01_volume_sha256.png)
+
+O log da coleta (arquivo, caminho no Volume, data, bytes, SHA-256, fonte e licença) está em [06](evidencias/databricks/06_nb01_verificacao_log_coleta.png). A bronze foi gravada em lotes de 20 mil linhas ([04](evidencias/databricks/04_nb01_bronze_lotes_inicio.png) e [05](evidencias/databricks/05_nb01_bronze_lotes_fim.png)) e ficou com as mesmas 833.217 linhas do CSV ([07](evidencias/databricks/07_nb01_verificacao_bronze_833217.png)).
 
 ## 4. Estrutura do repositório
 
@@ -122,7 +130,7 @@ As regras ficam em módulos Python (`scripts/`) chamados pelos notebooks, para p
 | `POSSIVEIS_DESCOBERTAS.md` | achados preliminares a confirmar |
 | `PENDENCIAS_AED.md` | comentários do autor sobre a exploração, acumulados e implementados por versão |
 | `resultados/figuras/`, `figuras_relatorio_v2/` | figuras da análise (f01 a f14) e do relatório de exploração v2 |
-| `evidencias/` | registros de execução (local, por enquanto; as capturas do Databricks entram aqui) |
+| `evidencias/` | capturas da execução no Databricks (`databricks/`, 01 a 25, de 21/10/2026) e registros da execução local |
 | `apresentacao/` | apresentação dos resultados (`.pptx` e `.pdf`) e o script que a gera |
 | `docs_fonte/` | documentação oficial do Vigitel: dicionário, orientações, nota metodológica e relatórios |
 | `LICENSE` | licença do código (MIT) e registro da licença dos dados |
@@ -143,6 +151,12 @@ Os microdados brutos (`dados/raw/`) não são versionados, por causa da licença
 ## 6. Modelagem
 
 Esquema estrela, com a fato no grão de entrevista (615.877 linhas, edições de 2010 a 2024) e seis dimensões: edição, capital, geração, escolaridade, faixa etária e sexo. Diagrama e motivo em [`catalogo/modelo_estrela.md`](catalogo/modelo_estrela.md); dicionário completo, com tipo, domínio, obrigatoriedade e linhagem de cada atributo, em [`catalogo/catalogo_de_dados.md`](catalogo/catalogo_de_dados.md).
+
+**Evidência da carga na gold.** No Databricks, o notebook 03 descreve as tabelas do modelo ([11](evidencias/databricks/11_nb03_cabecalho_estrela.png)), confere a integridade referencial (615.877 linhas na fato; 14 edições, 27 capitais, 4 gerações, 3 escolaridades, 6 faixas etárias e 2 sexos nas dimensões) e grava cada tabela com seu comentário ([12](evidencias/databricks/12_nb03_integridade_referencial.png)). Ao fim da execução, o esquema `genz_alcool` tem 26 tabelas Delta: bronze, silver, fato, dimensões, qualidade e resultados ([13](evidencias/databricks/13_nb03_tabelas_1.png) e [14](evidencias/databricks/14_nb03_tabelas_2.png)). A junção da fato com as seis dimensões reproduz as linhas da silver, sem perda nem duplicação:
+
+![Notebook 03: a fato com as seis dimensões reproduz as 615.877 linhas da silver](evidencias/databricks/15_nb03_estrela_consistente.png)
+
+A captura [16](evidencias/databricks/16_nb03_consulta_exemplo.png) mostra uma consulta de exemplo sobre o modelo (consumo abusivo aos 18-24 por geração e sexo). Ela usa a média ponderada simples, **sem** a padronização pela idade (D14), e por isso os valores diferem dos da seção 9; serve para demonstrar o modelo, não como resultado.
 
 ## 7. ETL e regras de negócio
 
@@ -165,13 +179,19 @@ As regras S1 a S11 da silver aplicam as decisões de tratamento tomadas pelo aut
 
 A edição de 2022 não existe e não é imputada (D1).
 
+**Evidência da transformação.** O notebook 02 traz a tabela das regras S1 a S11 com as decisões e os motivos ([08](evidencias/databricks/08_nb02_regras_silver.png)). Na silver persistida no Databricks, os jovens de 18 a 24 anos se distribuem como no desenho da D2: 23.805 millennials (edições de 2010 a 2016), 26.745 zillennials (2011 a 2021) e 10.485 da geração Z (2017 a 2024) ([09](evidencias/databricks/09_nb02_verificacao_geracoes.png)). O modo de coleta é só fixo até 2021, há fixo e celular em 2023 e 2024, e o peso normalizado soma 1 em cada edição (S5 e S11; [10](evidencias/databricks/10_nb02_verificacao_modo_peso.png)).
+
 ## 8. Qualidade dos dados
 
-O notebook 04 verifica 16 regras em seis dimensões (completude, unicidade, consistência, conformidade, acurácia e atualidade). Na execução local, todas as regras de verificação passaram (zero violações): bronze com as mesmas 833.217 linhas do CSV, silver com todas as 615.877 entrevistas de 2010 em diante, chave única, faixa etária e escolaridade coerentes, pulo das perguntas de doses conferido em 100% dos casos e peso normalizado somando 1 em cada edição. Registros informativos: 7.477 escolaridades estimadas pelo Ministério (D8), 35.280 entrevistas por celular (D2, D13) e a chave oficial repetida (D10).
+O notebook 04 verifica 16 regras em seis dimensões (completude, unicidade, consistência, conformidade, acurácia e atualidade; cabeçalho em [17](evidencias/databricks/17_nb04_cabecalho.png)). Na execução local e no Databricks, todas as regras de verificação passaram (zero violações): bronze com as mesmas 833.217 linhas do CSV, silver com todas as 615.877 entrevistas de 2010 em diante, chave única, faixa etária e escolaridade coerentes, pulo das perguntas de doses conferido em 100% dos casos e peso normalizado somando 1 em cada edição. Registros informativos: 7.477 escolaridades estimadas pelo Ministério (D8), 35.280 entrevistas por celular (D2, D13) e a chave oficial repetida em 86.001 registros (D10).
 
-## 9. Resultados (execução local; confirmar no Databricks)
+![Notebook 04: as 16 regras de qualidade no Databricks, com ocorrências, tratamento e situação](evidencias/databricks/18_nb04_checagens_qualidade.png)
 
-Os números abaixo vêm da execução local do pipeline (`evidencias/log_execucao_local_pipeline.txt`), com as mesmas regras e funções que rodam no Databricks. Prevalências ponderadas, aos 18-24 anos, **padronizadas pela idade simples** (seção 1.3 e D14); IC 95% aproximado (Kish). Diferenças com \* têm intervalo que não inclui o zero.
+Além das regras, o perfil dos 28 atributos da silver (tipo, nulos, % de nulos, valores distintos, mínimo, máximo e exemplos) está em [19](evidencias/databricks/19_nb04_perfil_atributos_1.png) e [20](evidencias/databricks/20_nb04_perfil_atributos_2.png). Os únicos atributos com nulos são a chave oficial (só existe em parte dos anos, D10), a frequência de consumo (pulo de quem não bebe) e a `costuma_beber_q35` (não publicada em 2024, D6).
+
+## 9. Resultados
+
+Os números abaixo foram obtidos na execução local (`evidencias/log_execucao_local_pipeline.txt`) e **confirmados na execução no Databricks** de 21/10/2026, que deu os mesmos valores. O notebook 05 ([21](evidencias/databricks/21_nb05_cabecalho.png)) gravou as tabelas `res_p1` a `res_p5`, `res_sensibilidades` e `res_veredito` ([14](evidencias/databricks/14_nb03_tabelas_2.png)) e gerou as figuras f01 e f02 ([22](evidencias/databricks/22_nb05_figuras_f01_f02.png)); as capturas de cada pergunta estão citadas nos parágrafos abaixo. Prevalências ponderadas, aos 18-24 anos, **padronizadas pela idade simples** (seção 1.3 e D14); IC 95% aproximado (Kish). Diferenças com \* têm intervalo que não inclui o zero.
 
 **Revisão de 18/10/2026.** A primeira versão destes resultados comparava as gerações sem padronizar pela idade e mostrava uma queda total de −2,1 p.p. Essa queda vinha em boa parte de a geração Z ter sido observada mais nova: na mesma idade, ela desaparece (figura f03a e última linha da f11). Os números sem padronizar ficam na tabela para mostrar o tamanho do viés.
 
@@ -181,19 +201,25 @@ Os números abaixo vêm da execução local do pipeline (`evidencias/log_execuca
 | Homens | 28,1% | 26,7% | 24,0% | −4,0 p.p. (−7,3 a −0,8)\* | −8,1 p.p. (−10,9 a −5,3)\* |
 | Mulheres | 14,1% | 17,8% | 20,5% | +6,4 p.p. (+3,6 a +9,2)\* | +3,9 p.p. (+1,5 a +6,3)\* |
 
-**Cada geração contra a anterior (P1).** Millennials → zillennials: +1,1 p.p. no total (−0,4 a +2,5), −1,4 nos homens (n.s.) e +3,8 nas mulheres (+2,0 a +5,6)\*. Zillennials → geração Z: 0,0 no total, −2,6 nos homens e +2,6 nas mulheres, nenhuma significativa. Padronizando também pela escolaridade dos millennials (D7), o total fica em 21,2%, 22,6% e 22,7%: a mudança de escolaridade não explica a diferença.
+**Cada geração contra a anterior (P1).** Millennials → zillennials: +1,1 p.p. no total (−0,4 a +2,5), −1,4 nos homens (n.s.) e +3,8 nas mulheres (+2,0 a +5,6)\*. Zillennials → geração Z: 0,0 no total, −2,6 nos homens e +2,6 nas mulheres, nenhuma significativa. Padronizando também pela escolaridade dos millennials (D7), o total fica em 21,2%, 22,6% e 22,7%: a mudança de escolaridade não explica a diferença. No Databricks: tabelas `res_p1_geracao` e `res_p1_diferencas` abaixo, e a figura f03 em [27](evidencias/databricks/27_nb05_p1_figura_f03.png).
 
-**Por escolaridade (P2).** Geração Z − millennials: +0,6 p.p. (0 a 8 anos de estudo), +2,0 (9 a 11) e +1,2 (12 ou mais), nenhuma significativa. Não há sinal de queda concentrada nos mais escolarizados, mas também não há queda em nenhuma faixa.
+![Notebook 05 no Databricks: P1, prevalência padronizada por geração e diferenças entre gerações](evidencias/databricks/26_nb05_p1_tabelas.png)
 
-**Geração ou época (P3).** Nas mesmas edições, os adultos de 35 a 44 anos subiram 3,8 p.p. (19,2% → 23,0%) e os jovens, 1,1 p.p.: a diferença das diferenças é de −2,7 p.p. (−5,1 a −0,3)\*. Os jovens não beberam menos em termos absolutos, mas subiram menos que a tendência da época. Ao envelhecer, os homens zillennials ficam cerca de 1,4 p.p. abaixo dos millennials tanto aos 18-24 quanto aos 25-29 (curvas paralelas); as mulheres zillennials ficam acima nas duas faixas. A leitura anterior de "adiamento" vinha do viés de idade e não se sustenta.
+**Por escolaridade (P2).** Geração Z − millennials: +0,6 p.p. (0 a 8 anos de estudo), +2,0 (9 a 11) e +1,2 (12 ou mais), nenhuma significativa. Não há sinal de queda concentrada nos mais escolarizados, mas também não há queda em nenhuma faixa. Sem os casos de escolaridade estimada (D8), as diferenças praticamente não mudam. No Databricks: tabelas `res_p2_diferencas` e decomposição por escolaridade em [29](evidencias/databricks/29_nb05_p2_tabelas.png); figura f06 em [30](evidencias/databricks/30_nb05_p2_heatmap_f06.png).
 
-**Por quê (decomposição, D6).** Homens: a proporção que bebe ao menos uma vez por mês quase não muda (43% → 41%); o que cai é o exagero entre os que bebem (65% → 58%). Mulheres: mais bebem (25% → 35%), e o exagero entre as que bebem fica estável (56% → 58%).
+**Geração ou época (P3).** Nas mesmas edições, os adultos de 35 a 44 anos subiram 3,8 p.p. (19,2% → 23,0%) e os jovens, 1,1 p.p.: a diferença das diferenças é de −2,7 p.p. (−5,1 a −0,3)\*. Os jovens não beberam menos em termos absolutos, mas subiram menos que a tendência da época. Ao envelhecer, os homens zillennials ficam cerca de 1,4 p.p. abaixo dos millennials tanto aos 18-24 quanto aos 25-29 (curvas paralelas); as mulheres zillennials ficam acima nas duas faixas. A leitura anterior de "adiamento" vinha do viés de idade e não se sustenta. No Databricks: período e diferença das diferenças em [31](evidencias/databricks/31_nb05_p3_periodo.png) e [32](evidencias/databricks/32_nb05_p3_diferenca_f07.png) (com a f07); envelhecimento (f08) em [33](evidencias/databricks/33_nb05_p3_envelhecimento_f08.png).
 
-**Capitais (P5).** Só Aracaju tem diferença fora da margem (−6,1 p.p.); com 27 capitais, cerca de uma é esperada só pelo acaso. Nenhuma região tem diferença significativa (de −0,5 p.p. no Norte a +4,5 no Sul). A maioria das capitais do Sul e do Sudeste (exceto o Rio de Janeiro) sobe e a maioria das do Nordeste (exceto Salvador) cai, mas dentro da margem.
+**Por sexo (P4).** Diferenças da tabela acima por sexo, com a figura f04, no Databricks: [34](evidencias/databricks/34_nb05_p4_sexos_f04.png). Homens: −4,0 p.p. da geração Z para os millennials (−7,3 a −0,8)\*; mulheres: +6,4 p.p. (+3,6 a +9,2)\*.
 
-**Robustez.** As mulheres sobem em cinco dos seis cenários com significância (de +5,1 a +8,1 p.p.); só na geração Z por telefone fixo (+2,7) o intervalo inclui o zero. A queda dos homens (de −2,4 a −4,1 p.p.) perde a significância em três cenários: só 18 a 21 anos, sem 2024 e geração Z só por fixo.
+**Por quê (decomposição, D6).** Homens: a proporção que bebe ao menos uma vez por mês quase não muda (43% → 41%); o que cai é o exagero entre os que bebem (65% → 58%). Mulheres: mais bebem (25% → 35%), e o exagero entre as que bebem fica estável (56% → 58%). No Databricks: tabela `res_p1_decomposicao` e figura f05 em [28](evidencias/databricks/28_nb05_p1_decomposicao_f05.png).
+
+**Capitais (P5).** Só Aracaju tem diferença fora da margem (−6,1 p.p.); com 27 capitais, cerca de uma é esperada só pelo acaso. Nenhuma região tem diferença significativa (de −0,5 p.p. no Norte a +4,5 no Sul). A maioria das capitais do Sul e do Sudeste (exceto o Rio de Janeiro) sobe e a maioria das do Nordeste (exceto Salvador) cai, mas dentro da margem. No Databricks: regiões em [35](evidencias/databricks/35_nb05_p5_regioes.png); capitais com o mapa f09 em [36](evidencias/databricks/36_nb05_p5_mapa_f09.png); margens por capital (f10) em [37](evidencias/databricks/37_nb05_p5_capitais_f10.png).
+
+**Robustez.** As mulheres sobem em cinco dos seis cenários com significância (de +5,1 a +8,1 p.p.); só na geração Z por telefone fixo (+2,7) o intervalo inclui o zero. A queda dos homens (de −2,4 a −4,1 p.p.) perde a significância em três cenários: só 18 a 21 anos, sem 2024 e geração Z só por fixo. No Databricks: tabelas de `res_sensibilidades` (diferença e significância por cenário) em [38](evidencias/databricks/38_nb05_sensibilidades_veredito.png).
 
 **Veredito pelos critérios da seção 1.2:** (a) **não atendido**: na mesma idade, a geração Z não tem prevalência menor que a dos millennials (+1,1 p.p., n.s.); (b) **não atendido**: os homens caem e as mulheres sobem, e nenhuma faixa de escolaridade cai; (c) atendido: os jovens subiram menos que os adultos de 35 a 44 no mesmo período. **A hipótese é refutada no que tem de central:** a geração Z não bebe em excesso menos que os millennials na mesma idade. O que existe é uma convergência entre os sexos (de 14 para 3,5 p.p.), com uma queda masculina moderada e pouco robusta e uma alta feminina robusta, e um consumo jovem que cresce menos que o dos adultos. Na versão sem padronizar, o critério (a) era atendido e a hipótese era "parcialmente refutada"; a mudança vem só da correção do método, com os critérios inalterados.
+
+![Notebook 05 no Databricks: figura de robustez (f11) e tabela res_veredito, com cada critério, o resultado padronizado e a leitura sem padronizar](evidencias/databricks/39_nb05_f11_veredito.png)
 
 ### 9.1 Figuras (em `resultados/figuras/`, na ordem da apresentação)
 
@@ -217,7 +243,7 @@ Os números abaixo vêm da execução local do pipeline (`evidencias/log_execuca
 
 ### 9.2 Análise complementar: o que anda junto com o consumo abusivo (notebook 06)
 
-Entre jovens de 18 a 24, diferença de consumo abusivo entre quem tem e quem não tem cada característica, ajustada por sexo e edição. Classificação de expectativa feita antes de olhar os dados.
+Entre jovens de 18 a 24, diferença de consumo abusivo entre quem tem e quem não tem cada característica, ajustada por sexo e edição. Classificação de expectativa feita antes de olhar os dados. Execução no Databricks: cabeçalho e cuidados de leitura em [23](evidencias/databricks/23_nb06_cabecalho.png), figura dos correlatos (f13) em [24](evidencias/databricks/24_nb06_f13_correlatos.png) e destaques (f14) com a gravação das tabelas `res_correlatos` e `res_correlatos_destaque` em [25](evidencias/databricks/25_nb06_f14_destaques.png).
 
 | Característica | % dos jovens | Diferença ajustada (IC 95%) | Todos os adultos | Leitura |
 |---|---|---|---|---|
@@ -234,7 +260,34 @@ Entre jovens de 18 a 24, diferença de consumo abusivo entre quem tem e quem nã
 
 **Cuidados:** associação não é causa e pode ser nos dois sentidos; com 21 testes, cerca de 1 "significativo" pode ser acaso, e por isso a tabela completa (`res_correlatos`) traz também o critério de Bonferroni; o ajuste é só por sexo e edição. Apostas online (pergunta nova de 2024) não puderam ser testadas: a resposta não foi publicada na base.
 
-A discussão completa, a autoavaliação e as evidências do Databricks serão acrescentadas após a execução na nuvem.
+### 9.3 Discussão por pergunta
+
+O ponto de partida deste trabalho foram as notícias de mercado afirmando que a geração Z bebe menos e que isso estaria dando prejuízo à indústria de bebidas alcoólicas. Todos temos percepções pessoais sobre o assunto; a intenção aqui foi verificar a afirmação com dados e, no caminho, conhecer o que mais se relaciona com o consumo dos jovens. A discussão abaixo liga cada resposta à decisão que ela apoia e diz até onde as limitações da seção 11.2 permitem ir.
+
+**P1. A geração Z bebe em excesso menos que as anteriores, na mesma idade?** Não, nas capitais brasileiras. Padronizada pela idade, a prevalência é praticamente a mesma nas três gerações (21,1%, 22,2% e 22,3%), e a diferença entre a geração Z e os millennials (+1,1 p.p.) não é significativa. A primeira versão da análise mostrava uma queda de 2,1 p.p., e ela vinha do desenho: na janela 2010-2024, os millennials foram observados sobretudo aos 22-24 anos e a geração Z sobretudo aos 18-20, e o consumo abusivo sobe com a idade (f03a). Comparar públicos com composições diferentes sem padronizar produz diferenças que não são de comportamento. Esse é, talvez, o principal aprendizado do trabalho: a mesma base, com o mesmo indicador, levou a vereditos opostos conforme o método. Para o decisor, a consequência é direta: a premissa que motiva o investimento ("o jovem bebe menos") não se confirma para o consumo abusivo no Brasil. Duas ressalvas impedem afirmar o contrário com força: o indicador mede quem bebe em excesso, não quanto se bebe (um jovem pode exagerar com a mesma frequência e beber menos no total), e o consumo é declarado por telefone.
+
+**P4. A diferença é igual entre homens e mulheres?** Não, e é aqui que está o achado mais forte. O total sem diferença esconde dois movimentos opostos que se cancelam: os homens caem 4,0 p.p. e as mulheres sobem 6,4 p.p., e a distância entre os sexos encolhe de 14 para 3,5 p.p. (f04). Os dois movimentos têm mecanismos diferentes (f05): entre os homens, a proporção que bebe quase não muda, mas cai o exagero entre os que bebem (de 65% para 58%), o que se parece com moderação; entre as mulheres, mais jovens passam a beber (de 25% para 35%), e o exagero entre as que bebem fica estável. As duas conclusões não têm a mesma solidez: a alta feminina se mantém em cinco dos seis cenários de robustez, enquanto a queda masculina perde a significância em três deles, inclusive quando a geração Z é comparada só pelo telefone fixo (f11). Há ainda uma limitação que pesa justamente aqui: se a norma social sobre o beber feminino mudou entre gerações, parte da alta pode ser de declaração (as jovens se sentem mais à vontade para relatar), e não só de comportamento. Para o negócio, a mensagem é que "o jovem" não é um público único: há uma história de moderação masculina, ainda frágil, e uma de entrada feminina no consumo, mais sólida.
+
+**P2. A diferença ocorre em todas as faixas de escolaridade?** Nenhuma faixa de escolaridade cai, e as diferenças entre as faixas não são significativas (f06). Não há, portanto, sinal de uma mudança restrita aos mais escolarizados, que justificaria um produto de nicho premium. Mas também não há queda generalizada que sustente um produto de massa com base nessa tendência. A resposta vale para escolaridade, usada como aproximação de classe social; aos 18-24 anos muitos jovens ainda estão estudando, e a renda não foi medida.
+
+**P3. A diferença é da geração ou da época?** No mesmo período, os adultos de 35 a 44 anos subiram 3,8 p.p. e os jovens, 1,1 p.p.; a diferença das diferenças (−2,7 p.p.) é significativa (f07). Os jovens não beberam menos em termos absolutos, mas ficaram abaixo da tendência da época, que foi de alta. Ao envelhecer, os homens zillennials mantêm a mesma distância dos millennials aos 18-24 e aos 25-29 anos (curvas paralelas, f08), o que é compatível com uma mudança que acompanha a geração, e não com um simples adiamento. A geração Z, porém, ainda não chegou aos 25-29 anos dentro da série, e a comparação com os adultos controla, mas não separa por completo, idade, período e geração.
+
+**P5. Quais capitais concentram as maiores diferenças?** Só Aracaju tem diferença fora da margem de erro (−6,1 p.p.), o que é compatível com o acaso em 27 comparações (f09, f10). Há um desenho regional (a maioria das capitais do Sul e do Sudeste sobe, a maioria das do Nordeste cai), mas dentro da margem. Com as amostras por capital e geração disponíveis, os dados não sustentam uma priorização regional de lançamento.
+
+**Correlatos (notebook 06).** A análise complementar abre mais perguntas do que responde, e isso é útil. Entre os jovens que usam cigarro eletrônico, 54% bebem em excesso, contra 20% dos que não usam (f14); o uso de tela por 3 horas ou mais no lazer anda junto com mais consumo, e não menos, ao contrário da ideia de que o jovem "fica no celular em vez de sair para beber"; o diagnóstico de depressão se associa ao consumo abusivo só entre os jovens (f13). São associações ajustadas apenas por sexo e edição, que não indicam causa nem direção. Cada uma delas pode virar uma investigação própria, com a metodologia adequada (controle de mais fatores, critério para muitos testes e, idealmente, dados que acompanhem as mesmas pessoas no tempo).
+
+### 9.4 Discussão geral: o que os dados dizem sobre o problema
+
+A pergunta de partida era se a geração Z bebe menos e se essa mudança vale para todas as classes sociais. Para o consumo abusivo nas capitais brasileiras, a resposta é que **a geração Z não bebe em excesso menos que os millennials na mesma idade**. O que mudou foi a composição: os homens jovens moderam um pouco o exagero, as jovens bebem mais, e o consumo jovem cresce menos que o dos adultos. A hipótese do trabalho foi refutada no que tem de central, e esse resultado negativo é, em si, informação para o decisor: ele diz que a narrativa de mercado não pode ser transportada para o Brasil sem verificação.
+
+Para as duas decisões da seção 1.1:
+
+1. **Nicho ou massa.** A pergunta pressupunha uma redução do consumo, cuja distribuição entre as classes definiria o posicionamento. Como a redução não aparece em nenhuma faixa de escolaridade, os dados não sustentam nenhum dos dois posicionamentos com base na tendência. O que eles mostram, a moderação entre os homens que bebem, aponta mais para produtos de baixo teor e de moderação do que para a substituição do álcool, mas esse sinal ainda é frágil.
+2. **Estrutural ou fase de idade.** As curvas paralelas dos homens millennials e zillennials sugerem uma mudança que acompanha a geração, e não um adiamento. A geração Z, porém, ainda não pode ser acompanhada ao envelhecer; a resposta para ela fica para as próximas edições do Vigitel.
+
+**Recomendação do autor ao decisor: esperar mais dados antes de um investimento de grande porte.** O custo de erro descrito na seção 1.1 (posicionar como tendência ampla algo que não se confirma) é exatamente o risco de agir apenas com a narrativa de mercado. Antes, recomendo: (a) **confirmar com outras fontes além de pesquisa e autorrelato**, como dados de vendas e de volume (varejo, a POF do IBGE e os dados da própria empresa), que medem consumo efetivo e não dependem da declaração do entrevistado; (b) **investigar melhor a relação entre o consumo abusivo e a quantidade consumida**, porque o Vigitel mede a ocorrência do exagero, não o volume: uma prevalência estável com menos exagero entre os homens que bebem pode coexistir com menor volume total, e é o volume que define o tamanho do mercado; e (c) **olhar para o público feminino jovem**, onde está a mudança mais robusta da série, tanto como oportunidade de mercado quanto como alerta de saúde pública. Para a política de saúde, o mesmo achado indica que as ações de prevenção ao consumo abusivo entre jovens não podem mais tomar o público masculino como o único foco.
+
+Por fim, as conclusões valem dentro dos limites declarados na seção 11.2: só capitais, consumo declarado por telefone, prevalência no lugar de volume, escolaridade no lugar de renda e uma mudança de modo de coleta (entrada do celular) que coincide com a geração Z. Nenhuma delas invalida o resultado central, mas todas recomendam cautela na passagem dos números para a decisão.
 
 ## 10. Situação do projeto e próximos passos
 
@@ -257,15 +310,75 @@ A discussão completa, a autoavaliação e as evidências do Databricks serão a
 
 - [x] Objetivo e perguntas de negócio documentados e íntegros, inclusive a formulação anterior (seção 1 e Anexo A).
 - [x] Origem, licença e data de coleta registradas (seção 3 e `LICENSE`).
-- [ ] Dados persistidos na plataforma de nuvem: executar os notebooks 01 a 06 no Databricks Free Edition (até aqui, só a execução local).
+- [x] Dados persistidos na plataforma de nuvem: notebooks 01 a 06 executados no Databricks Free Edition em 21/10/2026, com 26 tabelas Delta (seções 3, 6, 7 e 8).
 - [x] Modelo de dados descrito e catálogo com domínios e linhagem (seção 6 e `catalogo/`).
 - [x] Transformação e carga documentadas, com as regras de negócio explícitas (seção 7).
 - [x] Análise de qualidade em seis dimensões (seção 8), a confirmar na nuvem.
 - [x] Resposta a cada pergunta, com figura e discussão (seção 9), a confirmar na nuvem.
-- [ ] Discussão geral conectando as respostas às duas decisões de negócio.
-- [ ] Autoavaliação: perguntas respondidas e não respondidas, limitações, o que faria diferente e extensões para uso contínuo.
-- [ ] Capturas de tela do Databricks (Volume, células "Verificação" e resultados), legíveis e citadas no ponto do texto que sustentam (`evidencias/`).
+- [x] Discussão por pergunta e discussão geral conectando as respostas às duas decisões de negócio (seções 9.3 e 9.4).
+- [x] Autoavaliação: perguntas respondidas e não respondidas, limitações, o que faria diferente, dificuldades e extensões para uso contínuo (seção 11).
+- [x] Capturas de tela do Databricks (01 a 39), legíveis e citadas no ponto do texto que sustentam (`evidencias/databricks/`): coleta, bronze, silver, gold, qualidade, P1 a P5, sensibilidades, veredito e correlatos.
 - [x] Repositório público no GitHub (link a conferir em janela anônima antes da postagem).
+
+## 11. Autoavaliação
+
+### 11.1 Perguntas respondidas e não respondidas
+
+| # | Situação | Comentário |
+|---|---|---|
+| P1 | Respondida | Na mesma idade, a geração Z não tem prevalência menor que a dos millennials (+1,1 p.p., n.s.). A resposta só ficou correta depois da padronização pela idade (D14); a primeira versão indicava queda. |
+| P2 | Respondida, com poder limitado | Nenhuma faixa de escolaridade cai. A resposta vale para escolaridade, não para renda (seção 11.2). |
+| P3 | Respondida em parte | A comparação com os adultos de 35 a 44 anos foi feita (os jovens subiram menos que a época). O acompanhamento ao envelhecer só foi possível para millennials e zillennials: a geração Z ainda não chegou aos 25-29 anos dentro da série. Se a moderação da geração Z se mantém com a idade continua em aberto. |
+| P4 | Respondida | Convergência entre os sexos: queda masculina moderada e pouco robusta, alta feminina robusta. |
+| P5 | Respondida, mas pouco conclusiva | Só uma capital tem diferença fora da margem, o que é compatível com o acaso em 27 testes. As amostras por capital e geração são pequenas demais para ordenar capitais com segurança. |
+
+As duas decisões de negócio da seção 1.1 recebem resposta indireta (discussão completa na seção 9.4). Para a decisão 1 (nicho ou massa), os dados não sustentam a premissa de que o jovem bebe menos em excesso, em nenhuma faixa de escolaridade; o que aparece é moderação entre os homens que bebem e mais mulheres bebendo, o que favorece linhas de baixo teor e moderação mais do que um produto sem álcool de nicho. Para a decisão 2 (estrutural ou fase de idade), as curvas paralelas dos homens millennials e zillennials sugerem uma mudança que acompanha a geração, mas a geração Z ainda não pode ser acompanhada. Nenhuma das duas respostas mede o tamanho do mercado, porque o indicador é de prevalência, não de volume nem de tipo de bebida.
+
+O objetivo foi reescrito uma vez (16/10/2026), depois da análise exploratória, com a versão original preservada no Anexo A. A pergunta de negócio e a fonte não mudaram; mudou o desenho da comparação (de anos para gerações).
+
+### 11.2 Limitações dos dados que condicionaram os resultados
+
+**Alcance geográfico e cultural**
+- **Geração Z no Brasil, e só nas capitais.** Os resultados descrevem jovens das 26 capitais e do Distrito Federal. Não valem para o interior, para as áreas rurais nem para outros países. A percepção de que "a geração Z bebe menos", que motivou o problema, circula sobretudo a partir de outros mercados; este MVP não a testa fora do Brasil.
+- **Recortes de geração importados.** As fronteiras de geração seguem a convenção do Pew Research Center, pensada para os Estados Unidos. No Brasil, marcos como o acesso à internet e ao celular chegaram em outros momentos e de forma desigual entre classes. A faixa "zillennials" é convenção deste trabalho.
+
+**Medida**
+- **Autorrelato por telefone.** O consumo é declarado pelo próprio entrevistado, sujeito a viés de desejabilidade social. Se a norma social sobre beber mudou entre gerações (ou entre sexos), o próprio viés pode ter mudado, e parte da diferença observada pode ser de declaração, não de comportamento.
+- **Prevalência, não volume.** O indicador diz quem bebe em excesso, não quanto bebe, com que frequência nem que bebida. Não há pergunta sobre bebidas sem álcool ou de baixo teor, que são justamente o produto em decisão.
+- **Escolaridade no lugar de renda.** A base não mede renda de forma adequada; a escolaridade é uma aproximação de classe social. Além disso, aos 18-24 anos muitos jovens ainda estão estudando, e a escolaridade ainda não é a final.
+- **Mudança da pergunta.** A redação de doses mudou em 2010, o que limitou a série a 2010-2024; em 2024, o filtro de entrada do bloco de álcool mudou (D13) e a pergunta "costuma beber" (`q35`) não foi publicada.
+
+**Coleta e amostra**
+- **Telefone fixo e celular.** Millennials e zillennials foram entrevistados só por fixo; parte da geração Z, por celular (35.280 entrevistas), que tende a registrar mais consumo, talvez por responder sem a família por perto. A sensibilidade "geração Z só por fixo" reduz a alta feminina para +2,7 p.p. (n.s.) e tira a significância da queda masculina: o modo de coleta não explica tudo, mas pesa.
+- **Quem não responde.** Quem não tem telefone ou não atende não aparece. O peso rake corrige a composição por sexo, idade e escolaridade, mas não diferenças de comportamento entre quem responde e quem não responde (possível falta não aleatória, MNAR).
+- **Lacunas na série.** Não existe a edição de 2022 (D1); 2020 e 2021 foram coletadas na pandemia, com amostra menor (D11). Testadas como sensibilidade, não mudam a leitura central, mas reduzem a geração Z observada.
+
+**Desenho**
+- **Idade, geração e época se confundem.** Com a idade fixa, cada geração é observada em anos diferentes. A comparação com os adultos de 35 a 44 anos controla, mas não separa por completo, o efeito da época. O ano de nascimento é estimado (edição menos idade), com erro de até um ano.
+- **Poder estatístico.** As comparações por capital, por escolaridade dentro de sexo e as sensibilidades trabalham com poucos casos; vários resultados "n.s." significam "não deu para afirmar", não "não há diferença".
+- **Muitos testes.** Os 21 correlatos (notebook 06) e as 27 capitais elevam a chance de achados por acaso; o critério de Bonferroni foi mostrado, mas os correlatos estão ajustados só por sexo e edição e não indicam causa.
+
+### 11.3 O que eu faria diferente se recomeçasse
+
+1. **Definir a comparação por geração e na mesma idade desde o início.** A primeira formulação comparava anos (Anexo A) e a padronização pela idade só entrou em 18/10/2026 (D14), depois dos resultados prontos. A correção mudou o veredito da hipótese e obrigou a refazer figuras, textos e apresentação. Com o desenho certo desde o objetivo, esse retrabalho não existiria.
+2. **Listar as mudanças de método da pesquisa antes de escolher o período.** Pergunta nova em 2010, falta de 2022, pandemia, celular e filtro novo em 2024 só apareceram na exploração. Um levantamento da nota metodológica no primeiro dia teria antecipado as decisões D1, D2, D5, D11 e D13.
+3. **Levar o pipeline ao Databricks mais cedo.** O simulador local acelerou o desenvolvimento, mas adiou para o fim a parte que o trabalho exige demonstrar (dados persistidos na nuvem) e problemas próprios da plataforma, como o limite de tamanho de mensagem do Free Edition, que obrigou a gravar em lotes.
+4. **Fixar antes de olhar os dados quais testes seriam feitos.** Isso foi feito para os correlatos (expectativa classificada antes), mas não para as sensibilidades e as capitais.
+
+### 11.4 Dificuldades encontradas
+
+- **Limites do Databricks Free Edition.** Ler e gravar a base inteira (833 mil linhas e 486 colunas) de uma vez ultrapassava o limite de memória e de tamanho de mensagem da plataforma. A bronze passou a ser lida e gravada em lotes de 20 mil linhas, o que exigiu reescrever a rotina de carga e conferir que a soma dos lotes reproduz o CSV linha a linha.
+- **Tempo de execução.** A computação serverless tem espera para iniciar e, com a gravação em lotes, só a carga da bronze levou cerca de cinco minutos (mais de 40 gravações sucessivas). Cada correção exigia executar de novo a cadeia de notebooks, o que tornou o ciclo de ajuste lento e foi um dos motivos para desenvolver primeiro no simulador local.
+- **Refazer os resultados depois da D14.** A padronização pela idade só foi percebida na revisão, com resultados, figuras e apresentação prontos. Corrigir o método foi a decisão certa, mas obrigou a refazer tudo e a mudar o veredito da hipótese, o que reforça a primeira lição da seção 11.3.
+
+### 11.5 Extensões para uma solução de uso contínuo
+
+- **Atualização automática.** Agendar os notebooks 01 a 06 como um *Job* do Databricks a cada nova edição do Vigitel, com a conferência do SHA-256 decidindo se há arquivo novo e as regras de qualidade bloqueando a carga quando falharem.
+- **Painel para o decisor.** Publicar os resultados `res_*` num painel do Databricks (*AI/BI Dashboard*), com filtros de geração, sexo, escolaridade e capital, e a margem de erro sempre visível.
+- **Fechar as lacunas de cobertura.** Juntar a PNS (IBGE), que cobre interior e área rural e mede renda, e a PeNSE, que acompanha os adolescentes que ainda vão chegar aos 18 anos (geração Alpha).
+- **Medir o mercado, não só a prevalência.** Cruzar com dados de volume e de vendas (POF do IBGE, dados de varejo ou da própria empresa), inclusive de bebidas sem álcool e de baixo teor.
+- **Separar idade, período e geração com modelo.** Substituir as comparações descritivas por um modelo idade-período-coorte e acompanhar a geração Z aos 25-29 anos nas próximas edições, o que responde de vez à P3.
+- **Comparar com outros países.** Repetir o recorte com pesquisas equivalentes de outros países, para saber se a convergência entre os sexos e a moderação masculina são brasileiras ou globais.
 
 ## Referências
 
